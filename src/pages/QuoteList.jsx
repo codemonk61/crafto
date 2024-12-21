@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getQuotes } from '../services/quote';
@@ -11,26 +10,20 @@ import Loader from '../components/Loader';
 const styles = {
   wrapper: css`
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
     gap: 12px;
-    @media (max-width: 1232px) {
-      padding: 0px 12px;
-      grid-template-columns: repeat(3, 1fr);
-    }
-    @media (max-width: 960px) {
-      padding: 0px 12px;
-      grid-template-columns: repeat(2, 1fr);
-    }
-    @media (max-width: 680px) {
-      padding: 0px 12px;
-      grid-template-columns: 1fr;
-    }
+    padding: 12px;
+    max-width: 100%; /* Prevent horizontal overflow */
+    overflow-x: hidden; /* Hide horizontal scroll if it occurs */
+    box-sizing: border-box; /* Ensure padding doesn't add to element width */
   `,
   containerStyle: css`
     position: relative;
-    height: 200px;
+    width: 100%;
+    aspect-ratio: 16/9; /* Maintain consistent height-to-width ratio */
     overflow: hidden;
     border-radius: 10px;
+    background-color: #f0f0f0;
   `,
   imageStyle: css`
     width: 100%;
@@ -46,7 +39,7 @@ const styles = {
     background-color: rgba(0, 0, 0, 0.5);
     display: flex;
     justify-content: space-between;
-    opacity: 1;
+    opacity: 0;
     transition: opacity 0.3s ease-in-out;
     pointer-events: none;
   `,
@@ -56,18 +49,17 @@ const styles = {
     }
   `,
   floatBtn: css`
- position: fixed;
- bottom: 5%;
- right: 5%;
- display: inline-block;
- padding: 12px;
- border-radius: 20px;
- background: #7e8dfa;
- color: white;
- cursor: pointer;
-  box-shadow: 5px 5px 25px 0 rgba(46, 61, 73, 0.2);
-  font-weight: bold;
- `
+    position: fixed;
+    bottom: 5%;
+    right: 5%;
+    padding: 12px;
+    border-radius: 20px;
+    background: #7e8dfa;
+    color: white;
+    cursor: pointer;
+    box-shadow: 5px 5px 25px 0 rgba(46, 61, 73, 0.2);
+    font-weight: bold;
+  `,
 };
 
 const QuoteList = () => {
@@ -77,17 +69,16 @@ const QuoteList = () => {
   const limit = 20;
   const token = localStorage.getItem('token');
   const loaderRef = useRef(null);
-
-  const navigate = useNavigate()
+  const navigate = useNavigate();
 
   const fetchQuotes = async () => {
     setIsLoading(true);
     try {
       const data = await getQuotes(token, limit, offset);
       setQuotes((prev) => [...prev, ...data]);
-      setIsLoading(false);
     } catch (error) {
       console.error('Failed to fetch quotes:', error);
+    } finally {
       setIsLoading(false);
     }
   };
@@ -100,7 +91,7 @@ const QuoteList = () => {
     (entries) => {
       const target = entries[0];
       if (target.isIntersecting && !isLoading) {
-        setOffset((prevOffset) => prevOffset + limit);
+        setOffset((prev) => prev + limit);
       }
     },
     [isLoading]
@@ -113,14 +104,10 @@ const QuoteList = () => {
       threshold: 1.0,
     });
 
-    if (loaderRef.current) {
-      observer.observe(loaderRef.current);
-    }
+    if (loaderRef.current) observer.observe(loaderRef.current);
 
     return () => {
-      if (loaderRef.current) {
-        observer.unobserve(loaderRef.current);
-      }
+      if (loaderRef.current) observer.unobserve(loaderRef.current);
     };
   }, [handleObserver]);
 
@@ -128,9 +115,13 @@ const QuoteList = () => {
     <>
       <div css={styles.wrapper}>
         {quotes.map((quote, index) => (
-          <div key={index} css={styles.imageWrapper}>
+          <div key={index}>
             <div css={[styles.containerStyle, styles.containerHover]}>
-              <img src={quote.mediaUrl} alt="Quote" css={styles.imageStyle} />
+              <img
+                src={quote.mediaUrl || 'fallback-image-url.jpg'}
+                alt="Quote"
+                css={styles.imageStyle}
+              />
               <div css={styles.overlayStyle}>
                 <Text
                   text={`Created At`}
@@ -161,8 +152,8 @@ const QuoteList = () => {
           </div>
         ))}
       </div>
-      <div css={styles.floatBtn} onClick={()=>navigate('/createQuote')}>
-       Action
+      <div css={styles.floatBtn} onClick={() => navigate('/createQuote')}>
+        Action
       </div>
       {isLoading && <Loader />}
       <div ref={loaderRef} />
