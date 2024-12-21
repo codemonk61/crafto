@@ -29,7 +29,7 @@ export const getQuotes = async (token, limit = 10, offset = 0) => {
   const  data  = await axios.get(`${API_BASE_URL}/getQuotes?limit=${limit}&offset=${offset}`, {
     headers: { Authorization: token },
   });
-  console.log(data)
+ 
   const sliceData = data.data.data
  
 
